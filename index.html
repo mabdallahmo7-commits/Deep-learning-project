@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Road Crack Detection System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+
+        .main-content {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .upload-section {
+            margin-bottom: 40px;
+        }
+
+        .upload-zone {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 60px 40px;
+            text-align: center;
+            background: #f8f9ff;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .upload-zone:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+            transform: translateY(-2px);
+        }
+
+        .upload-zone.drag-over {
+            border-color: #764ba2;
+            background: #e8eaff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+
+        .upload-zone h2 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.5em;
+        }
+
+        .upload-zone p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        #imageInput {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            margin-left: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .results-section {
+            display: none;
+            margin-top: 40px;
+        }
+
+        .results-section.active {
+            display: block;
+        }
+
+        .comparison-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .image-box {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .image-box h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 1.3em;
+        }
+
+        .image-box img {
+            width: 100%;
+            border-radius: 10px;
+            display: block;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.active {
+            display: block;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .info-card {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .info-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .info-card ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .info-card li {
+            padding: 8px 0;
+            color: #555;
+        }
+
+        .info-card li:before {
+            content: "✓ ";
+            color: #667eea;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-card .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .comparison-container {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .main-content {
+                padding: 20px;
+            }
+
+            .upload-zone {
+                padding: 40px 20px;
+            }
+
+            .btn {
+                padding: 12px 30px;
+                font-size: 1em;
+            }
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+            opacity: 0.9;
+        }
+
+        .selected-file {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            display: none;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .selected-file.active {
+            display: flex;
+        }
+
+        .selected-file .file-icon {
+            font-size: 2em;
+            color: #667eea;
+        }
+
+        .selected-file .file-info {
+            flex-grow: 1;
+        }
+
+        .selected-file .file-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .selected-file .file-size {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .action-buttons {
+            display: none;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .action-buttons.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛣️ Road Crack Detection System</h1>
+            <p>AI-Powered Road Damage Segmentation using YOLOv8</p>
+        </div>
+
+        <div class="main-content">
+            <div class="alert alert-error" id="errorAlert"></div>
+            <div class="alert alert-success" id="successAlert"></div>
+
+            <div class="info-card">
+                <h3>📋 How it works:</h3>
+                <ul>
+                    <li>Upload or drag & drop an image of a road</li>
+                    <li>Our AI model will detect and segment cracks</li>
+                    <li>View the original and segmented images side-by-side</li>
+                    <li>Download the results for further analysis</li>
+                </ul>
+            </div>
+
+            <div class="upload-section">
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-icon">📁</div>
+                    <h2>Upload Road Image</h2>
+                    <p>Drag and drop your image here, or click to browse</p>
+                    <input type="file" id="imageInput" accept="image/*">
+                </div>
+
+                <div class="selected-file" id="selectedFile">
+                    <div class="file-icon">📄</div>
+                    <div class="file-info">
+                        <div class="file-name" id="fileName"></div>
+                        <div class="file-size" id="fileSize"></div>
+                    </div>
+                </div>
+
+                <div class="action-buttons" id="actionButtons">
+                    <button class="btn" onclick="processImage()">🔍 Detect Cracks</button>
+                    <button class="btn" onclick="preprocessImage()">🛠️ Preprocess</button>
+                    <button class="btn" onclick="evaluateModel()">📊 Evaluation</button>
+                    <button class="btn btn-secondary" onclick="clearSelection()">✕ Clear</button>
+                </div>
+            </div>
+
+            <div class="results-section" id="preprocess-section">
+                <h2 style="color: #667eea; text-align: center; margin-bottom: 20px; font-size: 1.8em;">
+                    📊 Preprocessing Results
+                </h2>
+                
+                <div class="comparison-container">
+                    <div class="image-box">
+                        <h3>Original Image</h3>
+                        <img id="originalImg-preprocess" alt="Original Image">
+                    </div>
+                    <div class="image-box">
+                        <h3>Preprocessed Image</h3>
+                        <img id="preprocessedImg" alt="Preprocessed Image">
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-section" id="evaluation-section">
+                <h2 style="color: #667eea; text-align: center; margin-bottom: 20px; font-size: 1.8em;">
+                    📊 Evaluation Results
+                </h2>
+                
+                <div class="comparison-container">
+                    <div class="image-box">
+                        <h3>Result Image</h3>
+                        <img id="result-img" alt="Result Image">
+                    </div>
+                    <div class="image-box">
+                        <h3>Confusion Matrix</h3>
+                        <img id="confusion-matrix-img" alt="Confusion Matrix">
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-section" id="resultsSection">
+                <h2 style="color: #667eea; text-align: center; margin-bottom: 20px; font-size: 1.8em;">
+                    📊 Detection Results
+                </h2>
+                
+                <div class="comparison-container">
+                    <div class="image-box">
+                        <h3>Original Image</h3>
+                        <img id="originalImg" alt="Original Image">
+                    </div>
+                    <div class="image-box">
+                        <h3>Segmented Image</h3>
+                        <img id="segmentedImg" alt="Segmented Image">
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 30px;">
+                    <button class="btn" onclick="downloadResult()">💾 Download Result</button>
+                    <button class="btn btn-secondary" onclick="analyzeAnother()">🔄 Analyze Another</button>
+                </div>
+            </div>
+        </div>
+        <div class="footer">
+            <p>Powered by YOLOv8 Segmentation Model | © 2025 Road Crack Detection System</p>
+        </div>
+    </div>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <h2 style="color: #667eea; margin-bottom: 10px;">Processing Image...</h2>
+            <p style="color: #666;">Please wait while we detect cracks</p>
+        </div>
+    </div>
+    <script>
+        let selectedFile = null;
+        let originalImageData = null;
+        let segmentedImageData = null;
+        // Upload zone click handler
+        document.getElementById('uploadZone').addEventListener('click', function() {
+            document.getElementById('imageInput').click();
+        });
+        // File input change handler
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            handleFileSelect(e.target.files[0]);
+        });
+        // Drag and drop handlers
+        const uploadZone = document.getElementById('uploadZone');
+        uploadZone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.classList.add('drag-over');
+        });
+        uploadZone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.classList.remove('drag-over');
+        });
+        uploadZone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.classList.remove('drag-over');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+        function handleFileSelect(file) {
+            if (!file) return;
+            // Check if it's an image
+            if (!file.type.match('image.*')) {
+                showAlert('Please select a valid image file', 'error');
+                return;
+            }
+            selectedFile = file;
+            
+            // Display file info
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = formatFileSize(file.size);
+            document.getElementById('selectedFile').classList.add('active');
+            document.getElementById('actionButtons').classList.add('active');
+            // Preview the image
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                originalImageData = e.target.result;
+            };
+            reader.readAsDataURL(file);
+            // Hide previous results
+            document.getElementById('resultsSection').classList.remove('active');
+            hideAlert();
+        }
+        async function processImage() {
+            if (!selectedFile) {
+                showAlert('Please select an image first', 'error');
+                return;
+            }
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            // Show loading overlay
+            document.getElementById('loadingOverlay').classList.add('active');
+            try {
+                const response = await fetch('http://localhost:5000/segment', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (data.segmented_image) {
+                    segmentedImageData = 'data:image/jpeg;base64,' + data.segmented_image;
+                    
+                    // Display results
+                    document.getElementById('originalImg').src = originalImageData;
+                    document.getElementById('segmentedImg').src = segmentedImageData;
+                    document.getElementById('resultsSection').classList.add('active');
+                    
+                    // Scroll to results
+                    document.getElementById('resultsSection').scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start' 
+                    });
+                    showAlert('✓ Crack detection completed successfully!', 'success');
+                } else {
+                    showAlert('Error: ' + (data.error || 'Unknown error occurred'), 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Failed to process image. Make sure the backend server is running.', 'error');
+            } finally {
+                // Hide loading overlay
+                console.log('finally block executed');
+                document.getElementById('loadingOverlay').classList.remove('active');
+            }
+        }
+                async function preprocessImage() {
+                    if (!selectedFile) {
+                        showAlert('Please select an image first', 'error');
+                        return;
+                    }
+        
+                    const formData = new FormData();
+                    formData.append('file', selectedFile);
+        
+                    // Show loading overlay
+                    document.getElementById('loadingOverlay').classList.add('active');
+        
+                    try {
+                        const response = await fetch('http://localhost:5000/preprocess', {
+                            method: 'POST',
+                            body: formData
+                        });
+        
+                        const data = await response.json();
+        
+                        if (data.preprocessed_image) {
+                            const preprocessedImageData = 'data:image/jpeg;base64,' + data.preprocessed_image;
+                            
+                            // Display results
+                            document.getElementById('originalImg-preprocess').src = originalImageData;
+                            document.getElementById('preprocessedImg').src = preprocessedImageData;
+                            document.getElementById('preprocess-section').classList.add('active');
+                            
+                            // Scroll to results
+                            document.getElementById('preprocess-section').scrollIntoView({ 
+                                behavior: 'smooth', 
+                                block: 'start' 
+                            });
+        
+                            showAlert('✓ Preprocessing completed successfully!', 'success');
+                        } else {
+                            showAlert('Error: ' + (data.error || 'Unknown error occurred'), 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        showAlert('Failed to process image. Make sure the backend server is running.', 'error');
+                    } finally {
+                        // Hide loading overlay
+                        console.log('finally block executed');
+                        document.getElementById('loadingOverlay').classList.remove('active');
+                    }
+                }
+        
+                async function evaluateModel() {
+                    // Show loading overlay
+                    document.getElementById('loadingOverlay').classList.add('active');
+        
+                    try {
+                        const response = await fetch('http://localhost:5000/evaluation', {
+                            method: 'GET'
+                        });
+        
+                        const data = await response.json();
+        
+                        if (data.result_image && data.confusion_matrix) {
+                            const resultImageData = 'data:image/png;base64,' + data.result_image;
+                            const confusionMatrixData = 'data:image/png;base64,' + data.confusion_matrix;
+                            
+                            // Display results
+                            document.getElementById('result-img').src = resultImageData;
+                            document.getElementById('confusion-matrix-img').src = confusionMatrixData;
+                            document.getElementById('evaluation-section').classList.add('active');
+                            
+                            // Scroll to results
+                            document.getElementById('evaluation-section').scrollIntoView({ 
+                                behavior: 'smooth', 
+                                block: 'start' 
+                            });
+        
+                            showAlert('✓ Evaluation completed successfully!', 'success');
+                        } else {
+                            showAlert('Error: ' + (data.error || 'Unknown error occurred'), 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        showAlert('Failed to retrieve evaluation results. Make sure the backend server is running.', 'error');
+                    } finally {
+                        // Hide loading overlay
+                        console.log('finally block executed');
+                        document.getElementById('loadingOverlay').classList.remove('active');
+                    }
+                }
+                function downloadResult() {
+                    if (!segmentedImageData) return;
+        
+                    const link = document.createElement('a');
+            link.href = segmentedImageData;
+            link.download = 'crack_detection_result_' + Date.now() + '.jpg';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showAlert('✓ Image downloaded successfully!', 'success');
+        }
+        function analyzeAnother() {
+            clearSelection();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        function clearSelection() {
+            selectedFile = null;
+            originalImageData = null;
+            segmentedImageData = null;
+            document.getElementById('imageInput').value = '';
+            document.getElementById('selectedFile').classList.remove('active');
+            document.getElementById('actionButtons').classList.remove('active');
+            document.getElementById('resultsSection').classList.remove('active');
+            document.getElementById('preprocess-section').classList.remove('active');
+            document.getElementById('evaluation-section').classList.remove('active');
+            hideAlert();
+        }
+        function showAlert(message, type) {
+            hideAlert();
+            
+            const alertId = type === 'error' ? 'errorAlert' : 'successAlert';
+            const alertElement = document.getElementById(alertId);
+            
+            alertElement.textContent = message;
+            alertElement.classList.add('active');
+            if (type === 'success') {
+                setTimeout(() => {
+                    hideAlert();
+                }, 5000);
+            }
+        }
+        function hideAlert() {
+            document.getElementById('errorAlert').classList.remove('active');
+            document.getElementById('successAlert').classList.remove('active');
+        }
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html>
