@@ -1,0 +1,5 @@
+1 كريم أيمن رشدى عبدالدايم  dataset and validation labels
+2 عبدالرحمن نادي وحيد شتيه   train 
+3 عبدالله محمد عبدالحليم يوسف  segmentation function
+4 فؤاد ايمن فؤاد سليمان     preprocessing function
+5 محمود حسين عبدالخالق    evaluation function
