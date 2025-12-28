@@ -1,0 +1,15 @@
+كريم ايمن رشدي ابراهيم عبدالدايم    data collection (Yolo_to_masks) / loss function
+412300318
+
+عبدالله محمد عبدالحليم يوسف      U-Net architecture
+412300278
+
+محمود حسين عبد الخالق               upload data / Train function
+412300387
+
+فؤاد أيمن فؤاد سليمان            backend
+412300310
+
+عبدالرحمن نادي وحيد شتيه            test
+412300273
+
